@@ -1,27 +1,28 @@
+
+  
 package no.hvl.dat110.broker;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import no.hvl.dat110.common.TODO;
-import no.hvl.dat110.common.Logger;
+import no.hvl.dat110.messages.Message;
 import no.hvl.dat110.messagetransport.Connection;
 
 public class Storage {
 
-	// data structure for managing subscriptions
-	// maps from a topic to set of subscribed users
 	protected ConcurrentHashMap<String, Set<String>> subscriptions;
-	
-	// data structure for managing currently connected clients
-	// maps from user to corresponding client session object
-	
 	protected ConcurrentHashMap<String, ClientSession> clients;
-
+	protected ConcurrentHashMap<String, Set<String>> disconnected;
+	protected ConcurrentHashMap<String, Message> bufferedMessages;
+	
 	public Storage() {
 		subscriptions = new ConcurrentHashMap<String, Set<String>>();
 		clients = new ConcurrentHashMap<String, ClientSession>();
+		disconnected = new ConcurrentHashMap<>();
+		bufferedMessages = new ConcurrentHashMap<>();
 	}
 
 	public Collection<ClientSession> getSessions() {
@@ -34,9 +35,6 @@ public class Storage {
 
 	}
 
-	// get the session object for a given user
-	// session object can be used to send a message to the user
-	
 	public ClientSession getSession(String user) {
 
 		ClientSession session = clients.get(user);
@@ -49,51 +47,79 @@ public class Storage {
 		return (subscriptions.get(topic));
 
 	}
+	public void addToDisconnected(String user){
+		disconnected.put(user, new HashSet<>());
+	}
+
+	public void addToBufferUnread(String topic, Message msg, String user){
+		String id = UUID.randomUUID().toString();
+		disconnected.get(user).add(id);
+		bufferedMessages.put(id, msg);
+	}
+	
+	public ConcurrentHashMap<String, Set<String>> getSubscriptions() {
+		return subscriptions;
+	}
+
+	public void setSubscriptions(ConcurrentHashMap<String, Set<String>> subscriptions) {
+		this.subscriptions = subscriptions;
+	}
+
+	public ConcurrentHashMap<String, ClientSession> getClients() {
+		return clients;
+	}
+
+	public void setClients(ConcurrentHashMap<String, ClientSession> clients) {
+		this.clients = clients;
+	}
+
+	public ConcurrentHashMap<String, Set<String>> getDisconnected() {
+		return disconnected;
+	}
+
+	public void setDisconnected(ConcurrentHashMap<String, Set<String>> disconnected) {
+		this.disconnected = disconnected;
+	}
+
+	public ConcurrentHashMap<String, Message> getBufferedMessages() {
+		return bufferedMessages;
+	}
+
+	public void setBufferedMessages(ConcurrentHashMap<String, Message> bufferedMessages) {
+		this.bufferedMessages = bufferedMessages;
+	}
 
 	public void addClientSession(String user, Connection connection) {
 
-		// TODO: add corresponding client session to the storage
-		
-		throw new UnsupportedOperationException(TODO.method());
+		clients.put(user, new ClientSession(user, connection));
 		
 	}
 
 	public void removeClientSession(String user) {
 
-		// TODO: remove client session for user from the storage
-
-		throw new UnsupportedOperationException(TODO.method());
+		clients.remove(user);
+		
 		
 	}
 
 	public void createTopic(String topic) {
 
-		// TODO: create topic in the storage
-
-		throw new UnsupportedOperationException(TODO.method());
-	
+		subscriptions.put(topic, new HashSet<>());
 	}
 
 	public void deleteTopic(String topic) {
 
-		// TODO: delete topic from the storage
-
-		throw new UnsupportedOperationException(TODO.method());
+		subscriptions.remove(topic);
 		
 	}
 
 	public void addSubscriber(String user, String topic) {
 
-		// TODO: add the user as subscriber to the topic
-		
-		throw new UnsupportedOperationException(TODO.method());
-		
+		subscriptions.get(topic).add(user);
 	}
 
 	public void removeSubscriber(String user, String topic) {
 
-		// TODO: remove the user as subscriber to the topic
-
-		throw new UnsupportedOperationException(TODO.method());
+		subscriptions.get(topic).remove(user);
 	}
 }
